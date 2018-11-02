@@ -1,9 +1,9 @@
 function [E1,X1,Y1] = propFrFT2(E0,X0,Y0,R0,R1,s0,s1,a,lambda,d,method)
 % Use the fractional Fourier transform (FrFT) to propagate the electric
-% field (E0) (2D only) with coordinates (X0 and Y0) to a detector 
-% positioned a distance (d) away. The radius of curvature of the initial
-% and final planes are given by (R0) and (R1), as well as the scaling 
-% factors for the initial and final planes (s0) and (s1). The
+% field (E0) (2D or ND stacks of 2D planes) with coordinates (X0 and Y0) to
+% a detector positioned a distance (d) away. The radius of curvature of the
+% initial and final planes are given by (R0) and (R1), as well as the 
+% scaling factors for the initial and final planes (s0) and (s1). The
 % overall transform parameter is (a). The parameters R0, R1, s0, s1, and a
 % maybe be given as scalars if identical for the x- and y-directions, and
 % may be given as [px py] is they are different. The last input (method) is
@@ -20,9 +20,9 @@ function [E1,X1,Y1] = propFrFT2(E0,X0,Y0,R0,R1,s0,s1,a,lambda,d,method)
 % Author: Anders F. Pedersen
 % 
 
-% Make sure the input electric field is a matrix
-if ~ismatrix(E0)
-    error('Input electric field must be a matrix.');
+% Assign default method if not specified
+if nargin == 10
+    method = 'vec';
 end
 
 % Make sure that x0 is a row vector or matrix

@@ -1,8 +1,8 @@
 function res = frfft1gpusp(fc,a)
 % Calculate the 1D fractional Fourier transform along the first dimension
-% of the input (fc), which must be a 1D or 2D array. The transform order is
-% given by the second input (a). The input (fc) must have an even number of
-% rows. Single precision only. Requires a compatible GPU.
+% of the input (fc). The transform order is given by the second input (a).
+% The input (fc) must have an even number of rows.
+% Single precision only. Requires a compatible GPU.
 % 
 % Example of usage:
 % res = frfft1gpusp(fc,a)
@@ -37,35 +37,37 @@ function res = frfft1gpusp(fc,a)
 % Author: Anders F. Pedersen
 %
 
-% Number of data points
-N = single(size(fc,1));
-M = single(size(fc,2));
+% Number of data points in the transform direction
+N = size(fc,1);
 
 % Check that the input length is even
 if mod(N,2) == 1
     error('Length of the input vector should be even.');
 end
 
-% Check that the input is a matrix
-if ~ismatrix(fc) || ~isnumeric(fc)
-    error('Input must be a matrix.');
-end
-
 % Change a to the interval [-2:2[
-a = single(mod(a + 2,4) - 2);
+a = mod(a + 2,4) - 2;
 
 % Deal with special cases
 if a == 0
     res = fc;
     return
 elseif a == 2 || a == -2
-    res = flipud(fc);
+    res = flip(fc,1);
     return
 end
 
+% Reshape ND array to 2D
+s = size(fc);
+fc = reshape(fc,s(1),prod(s(2:end)));
+
+% Number of data points in the non-transform direction
+M = size(fc,2);
+
 % Split the array to optimize FFT computation
-elmax = 2*4.98e7; % This is the number of elements that maximize the FFT performance on an Nvidia Titan X (Pascal) GPU with 12 GB VRAM
-m = floor(elmax/(2^nextpow2(8*N)));
+%elmax = 2*4.98e7; % This is the number of elements that maximize the FFT performance on an Nvidia Titan X (Pascal) GPU with 12 GB VRAM
+elmax = 49152000;
+m = floor(elmax/(2^nextpow2(16*N)));
 k = ceil(M/m);
 i1 = (0:(k - 1))*m + 1;
 i2 = (1:k)*m;
@@ -109,6 +111,9 @@ for i = 1:k
     % Return the result to the CPU
     res(:,i1(i):i2(i)) = gather(fg);
 end
+
+% Transform output from 2D to ND
+res = reshape(res,s);
 
 end
 

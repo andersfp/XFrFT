@@ -1,8 +1,8 @@
 function res = frfft1par(fc,a)
 % Calculate the 1D fractional Fourier transform along the first dimension
-% of the input (fc), which must be a 1D or 2D array. The transform order is
-% given by the second input (a). The input (fc) must have an even number of
-% rows. Requires Parallel Toolbox.
+% of the input (fc). The transform order is given by the second input (a).
+% The input (fc) must have an even number of rows.
+% Requires Parallel Toolbox.
 % 
 % Example of usage:
 % res = frfft1par(fc,a)
@@ -32,18 +32,12 @@ function res = frfft1par(fc,a)
 % Author: Anders F. Pedersen
 %
 
-% Number of data points
+% Number of data points in the transform direction
 N = size(fc,1);
-M = size(fc,2);
 
 % Check that the input length is even
 if mod(N,2) == 1
     error('Length of the input vector should be even.');
-end
-
-% Check that the input is a matrix
-if ~ismatrix(fc) || ~isnumeric(fc)
-    error('Input must be a matrix.');
 end
 
 % Change a to the interval [-2:2[
@@ -54,9 +48,16 @@ if a == 0
     res = fc;
     return
 elseif a == 2 || a == -2
-    res = flipud(fc);
+    res = flip(fc,1);
     return
 end
+
+% Reshape ND array to 2D
+s = size(fc);
+fc = reshape(fc,s(1),prod(s(2:end)));
+
+% Number of data points in the non-transform direction
+M = size(fc,2);
 
 % Interpolate the input function
 fc = bizinter(fc);
@@ -78,6 +79,9 @@ res	= corefrmod2(res,a);
 
 % Deinterpolate the result
 res = res(N+1:2:3*N,:);
+
+% Transform output from 2D to ND
+res = reshape(res,s);
 
 end
 
@@ -103,10 +107,8 @@ t = (-N+1:N-1).'/deltax;
 chrp2 = exp(1i*pi*beta*t.^2);
 clear x;
 clear t;
-if isa(fc,'single')
-    chrp1 = single(chrp1);
-    chrp2 = single(chrp2);
-end
+chrp1 = cast(chrp1,'like',fc);
+chrp2 = cast(chrp2,'like',fc);
 
 % Get lengths of chirp and fft length
 N2 = 2*N - 1;
